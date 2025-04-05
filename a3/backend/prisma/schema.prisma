@@ -1,0 +1,94 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  utorid    String    @unique
+  name      String
+  email     String?    @unique
+  password  String?
+  role      String?    // Values: "regular", "cashier", "manager", "superuser"
+  verified  Boolean?   @default(false)
+  birthday  DateTime?
+  suspicious Boolean? @default(false)
+  points    Int       @default(0)
+  createdAt DateTime  @default(now())
+  lastLogin DateTime?
+  avatarUrl String?
+  transactions Transaction[] // A user can have many transactions
+  events      Event[]        @relation("organizer") // A user can organize many events
+  promotions  Promotion[]    // A user can create many promotions
+  attendedEvents Event[]     @relation("attendee") // A user can attend many events (many-to-many)
+  eventAttendances EventAttendance[] // Opposite relation for EventAttendance
+  tokenVersion Int    @default(0)
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  type        String   // Values: "purchase", "adjustment", "redemption", "transfer", "event"
+  amount      Int?      // Points earned or spent
+  spent       Float?   // Dollar amount spent (for purchase transactions)
+  earned      Int?     // Points earned (for purchase transactions)
+  remark      String?
+  suspicious  Boolean?  @default(false)
+  createdAt   DateTime @default(now())
+  createdBy   String   // utorid of the user who created the transaction
+  userId      Int      // The user associated with the transaction
+  user        User     @relation(fields: [userId], references: [id])
+  eventId     Int?     // The event associated with the transaction (if applicable)
+  event       Event?   @relation(fields: [eventId], references: [id])
+  promotionId Int?     // The promotion associated with the transaction (if applicable)
+  promotion   Promotion? @relation(fields: [promotionId], references: [id])
+  relatedId   Int?   //id of the related transaction
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  location    String
+  startTime   DateTime
+  endTime     DateTime
+  capacity    Int?
+  points      Int      // Total points allocated for the event
+  pointsRemain Int     // Points remaining to be awarded
+  pointsAwarded Int    // Points already awarded
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  organizers  User[]   @relation("organizer") // Many-to-many relationship with users (organizers)
+  guests      User[]   @relation("attendee") // Many-to-many relationship with users (guests)
+  transactions Transaction[] // An event can have many transactions
+  eventAttendances EventAttendance[] // Opposite relation for EventAttendance
+}
+
+model Promotion {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  type        String   // Values: "automatic", "one-time"
+  startTime   DateTime
+  endTime     DateTime
+  minSpending Float?   // Minimum spending required
+  rate        Float?   // Promotional rate (e.g., 0.01 for 1 extra point per dollar)
+  points      Int?     // Fixed points for one-time promotions
+  createdAt   DateTime @default(now())
+  createdBy   String   // utorid of the user who created the promotion
+  userId      Int      // The user who created the promotion
+  user        User     @relation(fields: [userId], references: [id])
+  transactions Transaction[] // A promotion can be applied to many transactions
+}
+
+// Many-to-many relationship between users and events (for attendees)
+model EventAttendance {
+  id      Int    @id @default(autoincrement())
+  userId  Int
+  user    User   @relation(fields: [userId], references: [id])
+  eventId Int
+  event   Event  @relation(fields: [eventId], references: [id])
+}
