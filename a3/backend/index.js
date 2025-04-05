@@ -10,6 +10,7 @@ const JWT_SECRET = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwidXRvcmlkIjo
 
 
 
+
 // Functionality: Rate limiting for password reset requests
 const rateLimitReset = (req, res, next) => {
     const ip = req.ip;
@@ -69,6 +70,16 @@ const multer = require('multer');
 const path = require('path');
 
 app.use(express.json());
+
+const cors = require('cors');
+
+// Set up cors to allow requests from your React frontend
+app.use(cors({
+  origin: 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+}));
 
 
 //----------------------------------------------------------------------------------
