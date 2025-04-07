@@ -694,6 +694,7 @@ app.post('/auth/tokens', async (req, res) => {
 
     // Validate required fields
     if (!utorid || !password) {
+        console.log("Both 'utorid' and 'password' are required")
         return res.status(400).json({ error: "Both 'utorid' and 'password' are required" });
     }
 
@@ -705,6 +706,7 @@ app.post('/auth/tokens', async (req, res) => {
 
         // Check if the user exists
         if (!user) {
+            console.log("Invalid credentials")
             return res.status(401).json({ error: "Invalid credentials" });
         }
 
@@ -718,6 +720,7 @@ app.post('/auth/tokens', async (req, res) => {
         if (!user.password){return res.status(401).json({error: "no password set yet"})}
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
+            console.log("Invalid password")
             return res.status(401).json({ error: "Invalid credentials" });
         }
 

@@ -44,14 +44,14 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const login = async (username, password) => {
+    const login = async (utorid, password) => {
         try {
-            const response = await fetch(`${VITE_BACKEND_URL}/login`, {
+            const response = await fetch(`${VITE_BACKEND_URL}/auth/tokens`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ utorid, password })
             });
 
             if (!response.ok) {
@@ -70,14 +70,14 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const register = async ({ username, firstname, lastname, password }) => {
+    const register = async ({ utorid, name, email}) => {
         try {
-            const response = await fetch(`${VITE_BACKEND_URL}/register`, {
+            const response = await fetch(`${VITE_BACKEND_URL}/users`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ username, firstname, lastname, password })
+                body: JSON.stringify({ utorid, name, email })
             });
 
             if (!response.ok) {
