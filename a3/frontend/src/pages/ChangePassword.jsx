@@ -2,13 +2,11 @@ import './form.css';
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
-const Register = () => {
+const ChangePassword = () => {
     const { register } = useAuth();
     const [error, setError] = useState("");
     const [data, setData] = useState({
-        utorid: '',
-        name: '',
-        email: '',
+        newpassword: '',
     });
 
     const handle_change = (e) => {
@@ -23,7 +21,7 @@ const Register = () => {
     };
 
     return <>
-        <h2>Registration</h2>
+        <h2>Change Password</h2>
         <form onSubmit={handle_submit}>
             <label htmlFor="utorid">Utorid:</label>
             <input
@@ -35,23 +33,24 @@ const Register = () => {
                 onChange={handle_change}
                 required
             />
-            <label htmlFor="name">Name:</label>
+            <label htmlFor="password">New Password:</label>
             <input
-                type="text"
-                id="name"
-                name="name"
-                placeholder='name'
+                type="password"
+                id="Password"
+                name="Password"
+                placeholder='New Password'
                 value={data.name}
                 onChange={handle_change}
                 required
             />
-            <label htmlFor="email">Email:</label>
+
+            <label htmlFor="Token">Token:</label>
             <input
                 type="text"
-                id="email"
-                name="email"
-                placeholder='email'
-                value={data.email}
+                id="Token"
+                name="Token"
+                placeholder='Token'
+                value={data.name}
                 onChange={handle_change}
                 required
             />
@@ -63,4 +62,4 @@ const Register = () => {
     </>;
 };
 
-export default Register;
+export default ChangePassword;

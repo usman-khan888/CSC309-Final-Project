@@ -85,13 +85,39 @@ export const AuthProvider = ({ children }) => {
                 return errorData.message || 'Registration failed';
             }
 
-            navigate("/success");
+            navigate("/changepassword");
             return null;
         } catch (error) {
             console.error('Registration error:', error);
             return 'Network error occurred';
         }
     };
+
+    const resettoken = async ({ utorid}) => {
+        try {
+            const response = await fetch(`${VITE_BACKEND_URL}/auth/resets`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ utorid })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                return errorData.message || 'Registration failed';
+            }
+            
+            navigate("/changepassword");
+            return null;
+
+        } catch (error) {
+            console.error('Registration error:', error);
+            return 'Network error occurred';
+        }
+    };
+
+
 
     const logout = () => {
         localStorage.removeItem('token');
@@ -100,7 +126,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, register }}>
+        <AuthContext.Provider value={{ user, login, logout, register, resettoken }}>
             {children}
         </AuthContext.Provider>
     );

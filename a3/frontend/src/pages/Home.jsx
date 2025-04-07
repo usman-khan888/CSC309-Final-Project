@@ -7,6 +7,7 @@ function Home() {
         <div className="row">
             <Link to="/login">Login</Link>
             <Link to="/register">Register</Link>
+            <Link to="/resets">Forgot Password</Link>
         </div>
     </>;
 }
