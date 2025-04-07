@@ -68,18 +68,18 @@ const jwt = require('jsonwebtoken');
 const { v4: uuidv4 } = require('uuid');
 const multer = require('multer');
 const path = require('path');
-
+const cors = require("cors"); // Import CORS middleware
 app.use(express.json());
 
-const cors = require('cors');
-
-// Set up cors to allow requests from your React frontend
-app.use(cors({
-  origin: 'http://localhost:3000',
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+// Configure CORS to allow only your frontend origin
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173"; 
+app.use(
+  cors({
+    origin: FRONTEND_URL, // Restrict requests to this origin
+    methods: ["GET", "POST"], // Adjust based on your needs
+    credentials: true, // Enable if using cookies/sessions
+  })
+);
 
 
 //----------------------------------------------------------------------------------
