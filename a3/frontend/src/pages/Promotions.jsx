@@ -64,7 +64,7 @@ const Promotions = () => {
               type="text"
               className="w-full p-2 border rounded"
               onChange={(e) => handleFilterChange({ type: e.target.value })}
-              placeholder="Filter by location"
+              placeholder="Filter by type"
             />
           </div>
         </div>
@@ -80,7 +80,7 @@ const Promotions = () => {
               {promotionsData.results.map(promotion => (
                 <div key={promotion.id} className="border rounded-lg p-4 shadow hover:shadow-md transition-shadow">
                   <h2 className="text-xl font-semibold mb-2">{promotion.name}</h2>
-                  <p className="text-gray-600 mb-2">{promotion.location}</p>
+                  <p className="text-gray-600 mb-2">{promotion.type}</p>
                   <div className="text-sm text-gray-500 space-y-1">
                     <p>Type: {promotion.type}</p>
                   </div>
