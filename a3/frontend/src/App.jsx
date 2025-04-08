@@ -9,11 +9,8 @@ import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword"
 import ChangePassword from "./pages/ChangePassword"
 import Events from "./pages/Events"
-<<<<<<< HEAD
 import Users from "./pages/Users"
-=======
 import EditProfile from "./pages/EditProfile";
->>>>>>> 1bd35051be0be8e67dc6620b3edb6f735a6d955a
 
 const MyRoutes = () => {
     return <Routes>

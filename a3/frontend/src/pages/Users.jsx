@@ -72,22 +72,22 @@ const Users = () => {
           <div className="flex items-center">
             <input
               type="checkbox"
-              id="showVerified"
+              id="verified"
               className="mr-2"
-              checked={filters.showVerified}
-              onChange={(e) => handleFilterChange({ showVerified: e.target.checked })}
+              checked={filters.verified}
+              onChange={(e) => handleFilterChange({ verified: e.target.checked })}
             />
-            <label htmlFor="showVerified">Show verified</label>
+            <label htmlFor="verified">Show verified</label>
           </div>
           <div className="flex items-center">
             <input
               type="checkbox"
-              id="showActivated"
+              id="activated"
               className="mr-2"
-              checked={filters.showActivated}
-              onChange={(e) => handleFilterChange({ showActivated: e.target.checked })}
+              checked={filters.activated}
+              onChange={(e) => handleFilterChange({ activated: e.target.checked })}
             />
-            <label htmlFor="showActivated">Show Activated</label>
+            <label htmlFor="activated">Show Activated {}</label>
           </div>
         </div>
 
@@ -106,8 +106,8 @@ const Users = () => {
                   <div className="text-sm text-gray-500 space-y-1">
                     <p>Name: {usr.name}</p>
                     <p>Role: {usr.role}</p>
-                    <p>Verified: {usr.verified}</p>
-                    <p>Activated: {usr.activated}</p>
+                    <p>Verified: {usr.verified ? 'Yes' : 'No'}</p>
+                    <p>Activated: {usr.lastLogin ? 'Yes' : 'No'}</p>
                   </div>
                 </div>
               ))}
