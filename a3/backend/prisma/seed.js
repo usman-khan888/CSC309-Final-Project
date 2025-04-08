@@ -114,6 +114,26 @@ async function seedDatabase() {
       });
       events.push(event);
     }
+    const startTime = faker.date.future();
+    const endTime = new Date(startTime.getTime() + getRandomInt(1, 4) * 60 * 60 * 1000);
+    const full_event = await prisma.event.create({
+      data: {
+        name: faker.lorem.words(3),
+        description: faker.lorem.paragraph(),
+        location: faker.location.streetAddress(),
+        startTime,
+        endTime,
+        capacity: 10,
+        points: getRandomInt(100, 1000),
+        pointsRemain: getRandomInt(100, 1000),
+        pointsAwarded: 0,
+        published: faker.datatype.boolean(),
+        organizers: {
+          connect: [{ id: manager.id }] // Manager organizes events
+        }
+      }
+    });
+    events.push(full_event);
 
     console.log('Events created');
 
