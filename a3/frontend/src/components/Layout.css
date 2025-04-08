@@ -87,6 +87,16 @@ footer {
     background-color: #0b7dda; /* Darker blue on hover */
 }
 
+.points-display {
+    background-color: #ffc107; /* Yellow background */
+    color: #000; /* Black text */
+    padding: 8px 16px;
+    border-radius: 4px;
+    margin-right: 10px;
+    font-weight: bold;
+    display: inline-block;
+}
+
 @media (max-width: 400px) {
     main {
         padding: 20px 10px;
