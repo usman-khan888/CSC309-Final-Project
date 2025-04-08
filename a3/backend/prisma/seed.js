@@ -114,6 +114,7 @@ async function seedDatabase() {
       });
       events.push(event);
     }
+    for (let i = 0; i < 5; i++) {
     const startTime = faker.date.future();
     const endTime = new Date(startTime.getTime() + getRandomInt(1, 4) * 60 * 60 * 1000);
     const full_event = await prisma.event.create({
@@ -134,7 +135,7 @@ async function seedDatabase() {
       }
     });
     events.push(full_event);
-
+  }
     console.log('Events created');
 
     // Create promotions (at least 5)

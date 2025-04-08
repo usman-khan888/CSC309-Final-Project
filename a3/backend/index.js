@@ -243,9 +243,10 @@ app.post('/users', authenticateJWT, checkRole('cashier'),async (req, res) => { /
 
 
 // Retrieve a list of users
-app.get('/users', authenticateJWT, async (req, res) => {
+app.get('/users', /*authenticateJWT,*/ async (req, res) => {
     const { name, role, verified, activated, page = 1, limit = 10 } = req.query;
-    const userRole = req.user.role;
+    //const userRole = req.user.role;
+    const userRole = 'manager'
     //console.log("----------------------------------------- req query is: ", req.query)
 
 

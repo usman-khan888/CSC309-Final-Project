@@ -13,6 +13,7 @@ function Profile() {
         <p>You have been with us since {pretty_date}.</p>
         <div className="row">
             <Link to="/events">View Events</Link>
+            <Link to="/users">View Users</Link>
             <a href="#" onClick={logout}>Logout</a>
         </div>
     </>;
