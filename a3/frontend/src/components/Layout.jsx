@@ -9,7 +9,7 @@ const Layout = () => {
             <Link to="/">Home</Link>
             { user ? (
                 <>
-                    {user.role === 'cashier' && (
+                    {(user.role === 'cashier' || user.role === 'manager' || user.role === 'superuser')  && (
                         <Link to="/register" className="register-btn">Register New User</Link>
                     )}
                     <Link to="/edit-profile" className="edit-btn">Edit Profile</Link>
