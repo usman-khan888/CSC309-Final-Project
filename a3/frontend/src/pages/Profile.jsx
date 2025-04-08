@@ -3,7 +3,9 @@ import "./main.css";
 import { Link } from "react-router-dom";
 
 function Profile() {
+    
     const { user, logout } = useAuth();
+    console.log("User in profile:", user); // 👈 Add this
     const date = new Date(user?.createdAt);
     const options = { hour: 'numeric', minute: 'numeric', hour12: true };
     const pretty_date = date.toLocaleTimeString('en-US', options);

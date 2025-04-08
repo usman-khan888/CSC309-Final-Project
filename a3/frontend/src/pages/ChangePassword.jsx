@@ -3,10 +3,13 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const ChangePassword = () => {
-    const { register } = useAuth();
+    const { changePasswordWithToken } = useAuth();
     const [error, setError] = useState("");
     const [data, setData] = useState({
+        utorid: '',
         newpassword: '',
+        token: ''
+
     });
 
     const handle_change = (e) => {
@@ -16,8 +19,16 @@ const ChangePassword = () => {
 
     const handle_submit = (e) => {
         e.preventDefault();
-        register(data)
-        .then(message => setError(message));
+    
+        const { utorid, newpassword, token } = data;
+        changePasswordWithToken(token, { utorid, password: newpassword })
+            .then((res) => {
+                if (res.error) {
+                    setError(res.error);
+                } else {
+                    setError(res.success); // or show success differently
+                }
+            });
     };
 
     return <>
@@ -36,10 +47,10 @@ const ChangePassword = () => {
             <label htmlFor="password">New Password:</label>
             <input
                 type="password"
-                id="Password"
-                name="Password"
+                id="newpassword"
+                name="newpassword"
                 placeholder='New Password'
-                value={data.name}
+                value={data.newpassword}
                 onChange={handle_change}
                 required
             />
@@ -47,10 +58,10 @@ const ChangePassword = () => {
             <label htmlFor="Token">Token:</label>
             <input
                 type="text"
-                id="Token"
-                name="Token"
-                placeholder='Token'
-                value={data.name}
+                id="token"
+                name="token"
+                placeholder='token'
+                value={data.token}
                 onChange={handle_change}
                 required
             />
