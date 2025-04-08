@@ -7,12 +7,18 @@ const Layout = () => {
     return <>
         <header>
             <Link to="/">Home</Link>
-            { user ? <>
-                <Link to="/profile" className="user">{user.utorid}</Link>
-                <a href="#" onClick={logout}>Logout</a>
-                </> :
+            { user ? (
+                <>
+                    {user.role === 'cashier' && (
+                        <Link to="/register" className="register-btn">Register New User</Link>
+                    )}
+                    <Link to="/edit-profile" className="edit-btn">Edit Profile</Link>
+                    <Link to="/profile" className="user">{user.utorid}</Link>
+                    <a href="#" onClick={logout}>Logout</a>
+                </>
+            ) : (
                 <Link to="/login">Login</Link>
-            }
+            )}
         </header>
         <main>
             <Outlet />

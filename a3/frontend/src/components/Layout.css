@@ -61,6 +61,32 @@ footer {
     bottom: 0;
 }
 
+.register-btn {
+    background-color: #4CAF50; /* Green background */
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    margin-right: 10px;
+    text-decoration: none;
+}
+
+.register-btn:hover {
+    background-color: #45a049; /* Darker green on hover */
+}
+
+.edit-btn {
+    background-color: #2196F3; /* Blue background */
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    margin-right: 10px;
+    text-decoration: none;
+}
+
+.edit-btn:hover {
+    background-color: #0b7dda; /* Darker blue on hover */
+}
+
 @media (max-width: 400px) {
     main {
         padding: 20px 10px;
