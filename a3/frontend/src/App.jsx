@@ -11,6 +11,7 @@ import ChangePassword from "./pages/ChangePassword"
 import Events from "./pages/Events"
 import Users from "./pages/Users"
 import EditProfile from "./pages/EditProfile";
+import Promotions from "./pages/Promotions";
 
 const MyRoutes = () => {
     return <Routes>
@@ -25,6 +26,7 @@ const MyRoutes = () => {
             <Route path="/edit-profile" element={<EditProfile />} />
             <Route path="/events" element={<Events />} />
             <Route path="/users" element={<Users />} />
+            <Route path="/promotions" element={<Promotions />} />
         </Route>
     </Routes>;
 }
