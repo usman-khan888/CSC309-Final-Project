@@ -212,7 +212,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, register, resettoken,  changePasswordWithToken, updateUser}}>
+        <AuthContext.Provider value={{ user, login, logout, register, resettoken,  changePasswordWithToken, updateUser, backendUrl: VITE_BACKEND_URL }}>
             {children}
         </AuthContext.Provider>
     );
