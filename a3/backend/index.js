@@ -112,21 +112,21 @@ const calculateEarnedPoints = (spent) => {
 const authenticateJWT = (req, res, next) => {
     //console.log("Request headers:", req.headers); 
     
-    console.log("🔐 [0] Middleware triggered for:", req.method, req.path);
+    //console.log("🔐 [0] Middleware triggered for:", req.method, req.path);
     // Extract the token from the Authorization header
     // console.log("🔐 Incoming request to", req.path);
     // console.log("🪪 Headers:", req.headers);
 
     const authHeader = req.header('authorization');
-    console.log("🔐 [1] Auth header:", authHeader); 
+    //console.log("🔐 [1] Auth header:", authHeader); 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        console.log("❌ [2] Missing/malformed auth header");
+        //console.log("❌ [2] Missing/malformed auth header");
         // console.log("❌ No valid Authorization header");
         return res.status(401).json({ error: "Unauthorized: No token provided" });
     }
 
     const token = authHeader.split(' ')[1]; // Extract the token part after "Bearer "
-    console.log("🔐 [3] Extracted token:", token);
+    //console.log("🔐 [3] Extracted token:", token);
     if (!token) {
         // console.log("❌ Token missing after 'Bearer '");
         return res.status(401).json({ error: "Unauthorized: Invalid token format" });
@@ -136,12 +136,12 @@ const authenticateJWT = (req, res, next) => {
     jwt.verify(token, JWT_SECRET, (err, user) => {
         // console.log("token: ", token, "JWT_SECRET: ", JWT_SECRET)
         if (err) {
-            console.log("❌ [4] JWT verification failed:", err.message);
-            console.log("❌ JWT verification error:", err);
+            //console.log("❌ [4] JWT verification failed:", err.message);
+            //console.log("❌ JWT verification error:", err);
             return res.status(403).json({ error: "Forbidden: Invalid or expired token" });
         }
         req.user = user; // Attach the decoded user payload to the request object
-        console.log("✅ [5] Decoded token:", user);
+        //console.log("✅ [5] Decoded token:", user);
         // console.log("✅ Token verified. Payload:", user);
         next(); // Proceed to the next middleware or route handler
     });
@@ -2157,47 +2157,67 @@ app.patch('/events/:eventId', authenticateJWT, async (req, res) => {
 // In your backend delete endpoint
 app.delete('/events/:eventId', authenticateJWT, checkRole('manager'), async (req, res) => {
     const { eventId } = req.params;
+    const parsedEventId = parseInt(eventId);
     
     try {
-      // First verify the event exists
-      const event = await prisma.event.findUnique({
-        where: { id: parseInt(eventId) },
-      });
-  
-      if (!event) {
-        return res.status(404).json({ error: "Event not found" });
-      }
-  
-      // Check if event has any transactions or attendances
-      const hasTransactions = await prisma.transaction.count({
-        where: { eventId: parseInt(eventId) }
-      }) > 0;
-  
-      const hasAttendances = await prisma.eventAttendance.count({
-        where: { eventId: parseInt(eventId) }
-      }) > 0;
-  
-      if (hasTransactions || hasAttendances) {
-        return res.status(400).json({ 
-          error: "Cannot delete event with existing transactions or attendances"
+        // First verify the event exists
+        const event = await prisma.event.findUnique({
+            where: { id: parsedEventId },
         });
-      }
-  
-      // Proceed with deletion
-      await prisma.event.delete({
-        where: { id: parseInt(eventId) },
-      });
-  
-      return res.status(204).send();
-    } catch (error) {
-      console.error('Delete event error:', error);
-      return res.status(500).json({ 
-        error: "Internal server error",
-        details: error.message 
-      });
-    }
-  });
 
+        if (!event) {
+            console.log("404 Event not found");
+            return res.status(404).json({ error: "Event not found" });
+        }
+
+        // Check if event is published
+        if (event.published) {
+            console.log("400 Cannot delete a published event");
+            return res.status(400).json({ 
+                error: "Cannot delete a published event"
+            });
+        }
+
+        // Use a transaction to ensure all operations succeed or fail together
+        await prisma.$transaction([
+            // Delete all transactions associated with the event
+            prisma.transaction.deleteMany({
+                where: { eventId: parsedEventId }
+            }),
+            
+            // Delete all event attendances
+            prisma.eventAttendance.deleteMany({
+                where: { eventId: parsedEventId }
+            }),
+            
+            // Remove all organizer relationships (many-to-many)
+            prisma.event.update({
+                where: { id: parsedEventId },
+                data: {
+                    organizers: {
+                        set: [] // Disconnect all organizers
+                    },
+                    guests: {
+                        set: [] // Disconnect all guests
+                    }
+                }
+            }),
+            
+            // Finally delete the event itself
+            prisma.event.delete({
+                where: { id: parsedEventId }
+            })
+        ]);
+
+        return res.status(204).send();
+    } catch (error) {
+        console.error('Delete event error:', error);
+        return res.status(500).json({ 
+            error: "Internal server error",
+            details: error.message 
+        });
+    }
+});
 app.post('/events/:eventId/organizers', authenticateJWT, checkRole('manager'), async (req, res) => {
     try {
         const { eventId } = req.params;
