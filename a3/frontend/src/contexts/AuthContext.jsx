@@ -78,22 +78,29 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
-    const register = async ({ utorid, name, email}) => {
+    const register = async ({ utorid, name, email }) => {
         try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                return 'Authentication required';
+            }
+    
             const response = await fetch(`${VITE_BACKEND_URL}/users`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`  // Add this line
                 },
                 body: JSON.stringify({ utorid, name, email })
             });
-
+    
             if (!response.ok) {
                 const errorData = await response.json();
-                return errorData.message || 'Registration failed';
+                return errorData.error || errorData.message || 'Registration failed';
             }
-
-            navigate("/changepassword");
+            
+           // navigate("/changepassword");
+           console.log("User created: ", utorid, " ", name, " ", email)
             return null;
         } catch (error) {
             console.error('Registration error:', error);
@@ -125,6 +132,44 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             console.error('Error:', error);
             return { error: 'Network error' };
+        }
+    };
+
+    const updateUser = async (updateData, avatarFile) => {
+        try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                return { error: 'Authentication required' };
+            }
+    
+            const formData = new FormData();
+            
+            // Append all fields to formData
+            if (updateData.name !== undefined) formData.append('name', updateData.name);
+            if (updateData.email !== undefined) formData.append('email', updateData.email);
+            if (updateData.birthday !== undefined) formData.append('birthday', updateData.birthday);
+            if (avatarFile) formData.append('avatar', avatarFile);
+    
+            const response = await fetch(`${VITE_BACKEND_URL}/users/me`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                    // Don't set Content-Type - it will be set automatically with FormData
+                },
+                body: formData
+            });
+    
+            if (!response.ok) {
+                const errorData = await response.json();
+                return { error: errorData.error || 'Update failed' };
+            }
+    
+            const updatedUser = await response.json();
+            setUser(updatedUser); // Update the user in context
+            return { success: 'Profile updated successfully', user: updatedUser };
+        } catch (error) {
+            console.error('Update error:', error);
+            return { error: 'Network error occurred' };
         }
     };
 
@@ -167,7 +212,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, register, resettoken,  changePasswordWithToken}}>
+        <AuthContext.Provider value={{ user, login, logout, register, resettoken,  changePasswordWithToken, updateUser}}>
             {children}
         </AuthContext.Provider>
     );

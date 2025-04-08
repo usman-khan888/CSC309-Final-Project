@@ -76,7 +76,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 app.use(
   cors({
     origin: FRONTEND_URL, // Restrict requests to this origin
-    methods: ["GET", "POST"], // Adjust based on your needs
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE"], // Adjust based on your needs
     credentials: true, // Enable if using cookies/sessions
   })
 );
@@ -162,7 +162,7 @@ const checkRole = (role) => (req, res, next) => {
 };
 
 // User Registration (Cashier can create an account for a User)
-app.post('/users', authenticateJWT, checkRole('cashier'),async (req, res) => { // removed authentication for now
+app.post('/users', authenticateJWT,  checkRole('cashier'), async (req, res) => { // removed authentication for now
     const { utorid, name, email } = req.body;
     const userRole = req.user.role;
     //userRole = 'manager';
