@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { fetchEvents } from '../services/EventsService';
-import Layout from '../components/Layout';
 import EventForm from './EventForm';
 import AddOrganizerModal from './AddOrganizerModal';
 
@@ -30,7 +29,12 @@ const Events = () => {
         if (!token) throw new Error('Authentication required');
         
         const data = await fetchEvents(token, filters);
-        setEventsData(data);
+        // Ensure each event has an organizers array, even if empty
+        const eventsWithOrganizers = data.results.map(event => ({
+          ...event,
+          organizers: event.organizers || []
+        }));
+        setEventsData({...data, results: eventsWithOrganizers});
       } catch (err) {
         setError(err.message);
       } finally {
@@ -83,6 +87,11 @@ const Events = () => {
   };
 
   const isManager = user?.role === 'manager' || user?.role === 'superuser';
+  const isOrganizer = (event) => {
+    // Safely check if organizers exists and user is an organizer
+    if (!event.organizers) return false;
+    return event.organizers.some(org => org.utorid === user?.utorid);
+  };
 
   if (error) return <div className="text-red-500">Error: {error}</div>;
 
@@ -100,7 +109,7 @@ const Events = () => {
         )}
       </div>
       
-      {/* Filter Controls */}
+      {/* Filter Controls - visible to all users */}
       <div className="bg-white p-4 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">Event Name</label>
@@ -132,60 +141,60 @@ const Events = () => {
         </div>
       </div>
 
+      {/* Events List - visible to all users */}
       {/* Events List */}
-      {eventsData.results.length === 0 ? (
-        <div className="text-center py-8">
-          <p className="text-gray-500">No events found matching your criteria</p>
-        </div>
-      ) : (
-        <>
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {eventsData.results.map(event => (
-              <div key={event.id} className="border rounded-lg p-4 shadow hover:shadow-md transition-shadow relative">
-                <h2 className="text-xl font-semibold mb-2">{event.name}</h2>
-                <p className="text-gray-600 mb-2">{event.location}</p>
-                <div className="text-sm text-gray-500 space-y-1">
-                  <p>Starts: {new Date(event.startTime).toLocaleString()}</p>
-                  <p>Ends: {new Date(event.endTime).toLocaleString()}</p>
-                  <p>Attendees: {event.numGuests}/{event.capacity || '∞'}</p>
-                  <p>Points: {event.points} ({event.pointsRemain} remaining)</p>
-                  <p>Status: {event.published ? 'Published' : 'Draft'}</p>
-                </div>
+  {eventsData.results.length === 0 ? (
+    <div className="text-center py-8">
+      <p className="text-gray-500">No events found matching your criteria</p>
+    </div>
+  ) : (
+    <>
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {eventsData.results.map(event => (
+          <div key={event.id} className="border rounded-lg p-4 shadow hover:shadow-md transition-shadow relative">
+            <h2 className="text-xl font-semibold mb-2">{event.name}</h2>
+            <p className="text-gray-600 mb-2">{event.location}</p>
+            <div className="text-sm text-gray-500 space-y-1">
+              <p>Starts: {new Date(event.startTime).toLocaleString()}</p>
+              <p>Ends: {new Date(event.endTime).toLocaleString()}</p>
+              <p>Attendees: {event.numGuests}/{event.capacity || '∞'}</p>
+              <p>Points: {event.points} ({event.pointsRemain} remaining)</p>
+              <p>Status: {event.published ? 'Published' : 'Draft'}</p>
+            </div>
+            
+            {/* Action buttons - only shown to managers/organizers */}
+            {(isManager || isOrganizer(event)) && (
+              <div className="mt-4 flex space-x-2">
+                <button
+                  onClick={() => handleEditEvent(event)}
+                  className="text-sm bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
+                >
+                  Edit
+                </button>
                 
-                {/* Action buttons for managers/organizers */}
-                <div className="mt-4 flex space-x-2">
-                  {(isManager || event.organizers.some(org => org.utorid === user?.utorid)) && (
-                    <button
-                      onClick={() => handleEditEvent(event)}
-                      className="text-sm bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
-                    >
-                      Edit
-                    </button>
-                  )}
-                  
-                  {isManager && !event.published && (
-                    <button
-                      onClick={() => handleDeleteEvent(event.id)}
-                      className="text-sm bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
-                    >
-                      Delete
-                    </button>
-                  )}
-                  
-                  {isManager && (
-                    <button
-                      onClick={() => handleAddOrganizer(event)}
-                      className="text-sm bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
-                    >
-                      Add Organizer
-                    </button>
-                  )}
-                </div>
+                {isManager && !event.published && (
+                  <button
+                    onClick={() => handleDeleteEvent(event.id)}
+                    className="text-sm bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                  >
+                    Delete
+                  </button>
+                )}
+                
+                {isManager && (
+                  <button
+                    onClick={() => handleAddOrganizer(event)}
+                    className="text-sm bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
+                  >
+                    Add Organizer
+                  </button>
+                )}
               </div>
-            ))}
+            )}
           </div>
-
-          {/* Pagination */}
+        ))}
+      </div>
+          {/* Pagination - visible to all users */}
           {eventsData.count > filters.limit && (
             <div className="flex justify-center mt-8 space-x-2">
               <button
@@ -210,33 +219,33 @@ const Events = () => {
         </>
       )}
 
-      {/* Modals */}
+      {/* Modals - only accessible to managers */}
       {showCreateModal && (
-    <EventForm 
-      mode="create"
-      backendUrl={backendUrl}
-      onClose={() => setShowCreateModal(false)}
-      onSuccess={() => {
-        setShowCreateModal(false);
-        const token = localStorage.getItem('token');
-        fetchEvents(token, filters).then(data => setEventsData(data));
-      }}
-    />
-  )}
+        <EventForm 
+          mode="create"
+          backendUrl={backendUrl}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            const token = localStorage.getItem('token');
+            fetchEvents(token, filters).then(data => setEventsData(data));
+          }}
+        />
+      )}
 
-{showEditModal && currentEvent && (
-    <EventForm 
-      mode="edit"
-      event={currentEvent}
-      backendUrl={backendUrl}
-      onClose={() => setShowEditModal(false)}
-      onSuccess={() => {
-        setShowEditModal(false);
-        const token = localStorage.getItem('token');
-        fetchEvents(token, filters).then(data => setEventsData(data));
-      }}
-    />
-  )}
+      {showEditModal && currentEvent && (
+        <EventForm 
+          mode="edit"
+          event={currentEvent}
+          backendUrl={backendUrl}
+          onClose={() => setShowEditModal(false)}
+          onSuccess={() => {
+            setShowEditModal(false);
+            const token = localStorage.getItem('token');
+            fetchEvents(token, filters).then(data => setEventsData(data));
+          }}
+        />
+      )}
 
       {showAddOrganizerModal && currentEvent && (
         <AddOrganizerModal
