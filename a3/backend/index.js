@@ -111,15 +111,24 @@ const calculateEarnedPoints = (spent) => {
 // Middleware to authenticate JWT
 const authenticateJWT = (req, res, next) => {
     //console.log("Request headers:", req.headers); 
-
+    
+    console.log("🔐 [0] Middleware triggered for:", req.method, req.path);
     // Extract the token from the Authorization header
+    // console.log("🔐 Incoming request to", req.path);
+    // console.log("🪪 Headers:", req.headers);
+
     const authHeader = req.header('authorization');
+    console.log("🔐 [1] Auth header:", authHeader); 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log("❌ [2] Missing/malformed auth header");
+        // console.log("❌ No valid Authorization header");
         return res.status(401).json({ error: "Unauthorized: No token provided" });
     }
 
     const token = authHeader.split(' ')[1]; // Extract the token part after "Bearer "
+    console.log("🔐 [3] Extracted token:", token);
     if (!token) {
+        // console.log("❌ Token missing after 'Bearer '");
         return res.status(401).json({ error: "Unauthorized: Invalid token format" });
     }
 
@@ -127,9 +136,13 @@ const authenticateJWT = (req, res, next) => {
     jwt.verify(token, JWT_SECRET, (err, user) => {
         // console.log("token: ", token, "JWT_SECRET: ", JWT_SECRET)
         if (err) {
+            console.log("❌ [4] JWT verification failed:", err.message);
+            console.log("❌ JWT verification error:", err);
             return res.status(403).json({ error: "Forbidden: Invalid or expired token" });
         }
         req.user = user; // Attach the decoded user payload to the request object
+        console.log("✅ [5] Decoded token:", user);
+        // console.log("✅ Token verified. Payload:", user);
         next(); // Proceed to the next middleware or route handler
     });
 };
@@ -305,6 +318,7 @@ app.get('/users', authenticateJWT, async (req, res) => {
                 utorid: true,
                 name: true,
                 email: true,
+                password: true,
                 birthday: true,
                 role: true,
                 points: true,
@@ -352,6 +366,138 @@ app.get('/users', authenticateJWT, async (req, res) => {
 });
 
 
+// Update the current logged-in user's information
+app.patch('/users/me', authenticateJWT, upload.single('avatar'), async (req, res) => {
+    const { name, email, birthday } = req.body;
+    const avatarFile = req.file; // Uploaded avatar file
+    const userId = req.user.id; // ID of the logged-in user
+
+    try {
+        // Prepare the update data
+        const updateData = {};
+
+        // Handle name
+        if (name !== undefined) {
+            if (name === null) {
+                updateData.name = null; // Allow null
+            } else if (name.length < 1 || name.length > 50) {
+                return res.status(400).json({ error: "Name must be between 1 and 50 characters" });
+            } else {
+                updateData.name = name;
+            }
+        }
+
+        // Handle email
+        if (email !== undefined) {
+            if (email === null) {
+                updateData.email = null; // Allow null
+            } else if (!/^[^@]+@mail\.utoronto\.ca$/.test(email)) {
+                return res.status(400).json({ error: "Email must be a valid University of Toronto email" });
+            } else {
+                updateData.email = email;
+            }
+        }
+
+        // Handle birthday
+        if (birthday !== undefined) {
+            if (birthday === null) {
+                updateData.birthday = null; // Allow null
+            } else if (!/^\d{4}-\d{2}-\d{2}$/.test(birthday)) {
+                return res.status(400).json({ error: "Birthday must be in the format YYYY-MM-DD" });
+            } else {
+                updateData.birthday = new Date(birthday);
+            }
+        }
+
+        // Handle avatar
+        if (avatarFile) {
+            updateData.avatarUrl = `/uploads/avatars/${avatarFile.filename}`; // Save the avatar URL
+        }
+
+        // Update the user
+        const updatedUser = await prisma.user.update({
+            where: { id: userId },
+            data: updateData,
+            select: {
+                id: true,
+                utorid: true,
+                name: true,
+                email: true,
+                birthday: true,
+                role: true,
+                points: true,
+                createdAt: true,
+                lastLogin: true,
+                verified: true,
+                avatarUrl: true,
+            },
+        });
+
+        // Return the updated user details
+        res.status(200).json(updatedUser);
+    } catch (error) {
+        console.error(error);
+        if (error.code === 'P2002') { // Prisma unique constraint violation (e.g., duplicate email)
+            return res.status(400).json({ error: "Bad Request" });
+        }
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+
+// Retrieve the current logged-in user's information
+app.get('/users/me', authenticateJWT, async (req, res) => {
+    console.log("✅ Inside /users/me route handler");
+    console.log("User from token:", req.user);
+    const userId = req.user.id; // ID of the logged-in user
+    if (!userId) {
+        return res.status(400).json({ error: "User ID missing in token" });
+    }
+    console.log("Authenticated user ID:", req.user.id);
+
+    try {
+        // Fetch the current user's information
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                utorid: true,
+                name: true,
+                email: true,
+                birthday: true,
+                role: true,
+                points: true,
+                createdAt: true,
+                lastLogin: true,
+                verified: true,
+                avatarUrl: true,
+                promotions: {
+                    where: {
+                        type: 'one-time', // Only one-time promotions
+                        transactions: { none: { userId: userId } }, // Promotions not used by the user
+                    },
+                    select: {
+                        id: true,
+                        name: true,
+                        minSpending: true,
+                        rate: true,
+                        points: true,
+                    },
+                },
+            },
+        });
+
+        if (!user) {
+            return res.status(404).json({ error: "Not Found" });
+        }
+
+        // Return the user's information
+        res.status(200).json(user);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
 
 
 
@@ -507,132 +653,7 @@ app.patch('/users/:userId', authenticateJWT, async (req, res) => {
 });
 
 
-// Update the current logged-in user's information
-app.patch('/users/me', authenticateJWT, upload.single('avatar'), async (req, res) => {
-    const { name, email, birthday } = req.body;
-    const avatarFile = req.file; // Uploaded avatar file
-    const userId = req.user.id; // ID of the logged-in user
 
-    try {
-        // Prepare the update data
-        const updateData = {};
-
-        // Handle name
-        if (name !== undefined) {
-            if (name === null) {
-                updateData.name = null; // Allow null
-            } else if (name.length < 1 || name.length > 50) {
-                return res.status(400).json({ error: "Name must be between 1 and 50 characters" });
-            } else {
-                updateData.name = name;
-            }
-        }
-
-        // Handle email
-        if (email !== undefined) {
-            if (email === null) {
-                updateData.email = null; // Allow null
-            } else if (!/^[^@]+@mail\.utoronto\.ca$/.test(email)) {
-                return res.status(400).json({ error: "Email must be a valid University of Toronto email" });
-            } else {
-                updateData.email = email;
-            }
-        }
-
-        // Handle birthday
-        if (birthday !== undefined) {
-            if (birthday === null) {
-                updateData.birthday = null; // Allow null
-            } else if (!/^\d{4}-\d{2}-\d{2}$/.test(birthday)) {
-                return res.status(400).json({ error: "Birthday must be in the format YYYY-MM-DD" });
-            } else {
-                updateData.birthday = new Date(birthday);
-            }
-        }
-
-        // Handle avatar
-        if (avatarFile) {
-            updateData.avatarUrl = `/uploads/avatars/${avatarFile.filename}`; // Save the avatar URL
-        }
-
-        // Update the user
-        const updatedUser = await prisma.user.update({
-            where: { id: userId },
-            data: updateData,
-            select: {
-                id: true,
-                utorid: true,
-                name: true,
-                email: true,
-                birthday: true,
-                role: true,
-                points: true,
-                createdAt: true,
-                lastLogin: true,
-                verified: true,
-                avatarUrl: true,
-            },
-        });
-
-        // Return the updated user details
-        res.status(200).json(updatedUser);
-    } catch (error) {
-        console.error(error);
-        if (error.code === 'P2002') { // Prisma unique constraint violation (e.g., duplicate email)
-            return res.status(400).json({ error: "Bad Request" });
-        }
-        res.status(500).json({ error: "Internal server error" });
-    }
-});
-
-
-// Retrieve the current logged-in user's information
-app.get('/users/me', authenticateJWT, async (req, res) => {
-    const userId = req.user.id; // ID of the logged-in user
-
-    try {
-        // Fetch the current user's information
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                id: true,
-                utorid: true,
-                name: true,
-                email: true,
-                birthday: true,
-                role: true,
-                points: true,
-                createdAt: true,
-                lastLogin: true,
-                verified: true,
-                avatarUrl: true,
-                promotions: {
-                    where: {
-                        type: 'one-time', // Only one-time promotions
-                        transactions: { none: { userId: userId } }, // Promotions not used by the user
-                    },
-                    select: {
-                        id: true,
-                        name: true,
-                        minSpending: true,
-                        rate: true,
-                        points: true,
-                    },
-                },
-            },
-        });
-
-        if (!user) {
-            return res.status(404).json({ error: "Not Found" });
-        }
-
-        // Return the user's information
-        res.status(200).json(user);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Internal server error" });
-    }
-});
 
 
 
@@ -748,16 +769,20 @@ app.post('/auth/tokens', async (req, res) => {
 
 // Request a password reset email.
 app.post('/auth/resets', rateLimitReset, async (req, res) => {
+
+   
     const { utorid } = req.body;
 
     // Validate required field
     if (!utorid) {
+        console.log("utorid is required")
         return res.status(400).json({ error: "utorid is required" });
     }
 
     // Check if the user exists
     const user = await prisma.user.findUnique({ where: { utorid } });
     if (!user) {
+        console.log("User not found")
         return res.status(404).json({ error: "User not found" });
     }
 
