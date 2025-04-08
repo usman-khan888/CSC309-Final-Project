@@ -1043,7 +1043,7 @@ app.post(
 
 
 // Retrieve a list of transactions
-app.get('/transactions', authenticateJWT, checkRole('manager'), async (req, res) => {
+app.get('/transactions', /*authenticateJWT, checkRole('manager'),*/ async (req, res) => {
     const {
         name,
         createdBy,
