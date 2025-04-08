@@ -37,3 +37,21 @@ export const fetchUsers = async (token, {
     throw error;
   }
 };
+
+export const updateUser = async (token, userId, updateData) => {
+  const response = await fetch(`${VITE_BACKEND_URL}/users/${userId}`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    },
+    body: JSON.stringify(updateData)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || 'Failed to update user');
+  }
+
+  return await response.json();
+};
