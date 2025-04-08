@@ -2154,40 +2154,49 @@ app.patch('/events/:eventId', authenticateJWT, async (req, res) => {
 
 
 // Remove the specified event
+// In your backend delete endpoint
 app.delete('/events/:eventId', authenticateJWT, checkRole('manager'), async (req, res) => {
     const { eventId } = req.params;
-    console.log("-------------------------------------------------get /events/:eventId: ", eventId, "req.params: ", req.params)
-    if (!eventId || eventId === 'None' || isNaN(parseInt(eventId, 10))) {
-        return res.status(400).json({ error: "Invalid or missing event ID" });
-    }
+    
     try {
-        // Find the event by ID
-        const event = await prisma.event.findUnique({
-            where: { id: parseInt(eventId) },
+      // First verify the event exists
+      const event = await prisma.event.findUnique({
+        where: { id: parseInt(eventId) },
+      });
+  
+      if (!event) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+  
+      // Check if event has any transactions or attendances
+      const hasTransactions = await prisma.transaction.count({
+        where: { eventId: parseInt(eventId) }
+      }) > 0;
+  
+      const hasAttendances = await prisma.eventAttendance.count({
+        where: { eventId: parseInt(eventId) }
+      }) > 0;
+  
+      if (hasTransactions || hasAttendances) {
+        return res.status(400).json({ 
+          error: "Cannot delete event with existing transactions or attendances"
         });
-
-        // Check if the event exists
-        if (!event) {
-            return res.status(404).json({ error: "Event not found" });
-        }
-
-        // Check if the event has already been published
-        if (event.published) {
-            return res.status(400).json({ error: "Cannot delete a published event" });
-        }
-
-        // Delete the event
-        await prisma.event.delete({
-            where: { id: parseInt(eventId) },
-        });
-
-        // Return a 204 No Content response
-        res.status(204).send();
+      }
+  
+      // Proceed with deletion
+      await prisma.event.delete({
+        where: { id: parseInt(eventId) },
+      });
+  
+      return res.status(204).send();
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Internal server error" });
+      console.error('Delete event error:', error);
+      return res.status(500).json({ 
+        error: "Internal server error",
+        details: error.message 
+      });
     }
-});
+  });
 
 app.post('/events/:eventId/organizers', authenticateJWT, checkRole('manager'), async (req, res) => {
     try {
