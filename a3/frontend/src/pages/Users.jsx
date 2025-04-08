@@ -21,9 +21,8 @@ const Users = () => {
     const loadUsers = async () => {
       try {
         setLoading(true);
-        //const token = localStorage.getItem('token');
-        //if (!token) throw new Error('Authentication required');
-        const token = 'dummy-token'; // override actual token for now
+        const token = localStorage.getItem('token');
+        if (!token) throw new Error('Authentication required');
 
 
         
