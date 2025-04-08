@@ -162,11 +162,7 @@ const checkRole = (role) => (req, res, next) => {
 };
 
 // User Registration (Cashier can create an account for a User)
-<<<<<<< HEAD
-app.post('/users', authenticateJWT, checkRole('cashier'),async (req, res) => {
-=======
 app.post('/users', authenticateJWT,  checkRole('cashier'), async (req, res) => { // removed authentication for now
->>>>>>> 1bd35051be0be8e67dc6620b3edb6f735a6d955a
     const { utorid, name, email } = req.body;
     const userRole = req.user.role;
     //userRole = 'manager';
