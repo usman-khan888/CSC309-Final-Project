@@ -1,5 +1,6 @@
 import { useAuth } from "../contexts/AuthContext";
 import "./main.css";
+import { Link } from "react-router-dom";
 
 function Profile() {
     const { user, logout } = useAuth();
@@ -8,11 +9,11 @@ function Profile() {
     const pretty_date = date.toLocaleTimeString('en-US', options);
 
     return <>
-        <h3>Hello, {user?.firstname} {user?.lastname}!</h3>
+        <h3>Hello, {user?.name}!</h3>
         <p>You have been with us since {pretty_date}.</p>
         <div className="row">
+            <Link to="/events">View Events</Link>
             <a href="#" onClick={logout}>Logout</a>
-
         </div>
     </>;
 }

@@ -1727,7 +1727,7 @@ app.post('/events', authenticateJWT, checkRole('manager'), async (req, res) => {
 });
 
 // Retrieve a list of events
-app.get('/events', authenticateJWT, async (req, res) => {
+app.get('/events', /*authenticateJWT,*/ async (req, res) => {
     try {
         const { name, location, started, ended, showFull, page = 1, limit = 10, published } = req.query;
         
@@ -1744,9 +1744,10 @@ app.get('/events', authenticateJWT, async (req, res) => {
         // Build the filter object
         const where = {};
 
-        // Common filters for all roles
-        if (name) where.name = { contains: name, mode: 'insensitive' };
-        if (location) where.location = { contains: location, mode: 'insensitive' };
+        // Common filters for all roles**** CHANGED BY USMAN mode WASN't WOKRING
+        if (name) where.name = { contains: name.toLowerCase() };
+        if (location) where.location = { contains: location.toLowerCase() };
+        
 
         // Started and ended filters
         if (started !== undefined) {
@@ -1768,7 +1769,7 @@ app.get('/events', authenticateJWT, async (req, res) => {
         if (showFull === 'false') {
             where.capacity = { gt: await prisma.eventAttendance.count({ where: { eventId: where.id } }) };
         }
-
+        req.user = { role: 'manager' }; ///**** CHANGED BY USMAN NEED to revert
         // Role-specific filters
         if (req.user.role === 'regular' || req.user.role === 'cashier') {
             where.published = true; // Regular users can only see published events
@@ -2852,8 +2853,8 @@ app.get('/promotions', authenticateJWT, async (req, res) => {
         // Build the filter object
         const where = {};
 
-        // Common filters for all roles
-        if (name) where.name = { contains: name, mode: 'insensitive' };
+        // Common filters for all roles **** CHANGED BY USMAN mode WASN't WOKRING
+        if (name) where.name = { contains: name.toLowerCase() };
         if (type) where.type = type;
 
         // Role-specific filters

@@ -8,7 +8,7 @@ const Layout = () => {
         <header>
             <Link to="/">Home</Link>
             { user ? <>
-                <Link to="/profile" className="user">{user.username}</Link>
+                <Link to="/profile" className="user">{user.utorid}</Link>
                 <a href="#" onClick={logout}>Logout</a>
                 </> :
                 <Link to="/login">Login</Link>
@@ -18,7 +18,7 @@ const Layout = () => {
             <Outlet />
         </main>
         <footer>
-            &copy; CSC309, Winter 2025, Tutorial 11 
+            &copy; CSC309, Winter 2025, Final Project
         </footer>
     </>;
 };

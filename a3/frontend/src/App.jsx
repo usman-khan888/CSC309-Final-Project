@@ -8,6 +8,7 @@ import Success from "./pages/Success";
 import Profile from "./pages/Profile";
 import ResetPassword from "./pages/ResetPassword"
 import ChangePassword from "./pages/ChangePassword"
+import Events from "./pages/Events"
 
 const MyRoutes = () => {
     return <Routes>
@@ -19,6 +20,7 @@ const MyRoutes = () => {
             <Route path="/profile" element={<Profile />} />
             <Route path="/resets" element={<ResetPassword />} />
             <Route path="/changepassword" element={<ChangePassword />} />
+            <Route path="/events" element={<Events />} />
         </Route>
     </Routes>;
 }
