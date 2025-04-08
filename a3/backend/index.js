@@ -162,7 +162,7 @@ const checkRole = (role) => (req, res, next) => {
 };
 
 // User Registration (Cashier can create an account for a User)
-app.post('/users', authenticateJWT, checkRole('cashier'),async (req, res) => { // removed authentication for now
+app.post('/users', authenticateJWT, checkRole('cashier'),async (req, res) => {
     const { utorid, name, email } = req.body;
     const userRole = req.user.role;
     //userRole = 'manager';
@@ -256,10 +256,9 @@ app.post('/users', authenticateJWT, checkRole('cashier'),async (req, res) => { /
 
 
 // Retrieve a list of users
-app.get('/users', /*authenticateJWT,*/ async (req, res) => {
+app.get('/users', authenticateJWT, async (req, res) => {
     const { name, role, verified, activated, page = 1, limit = 10 } = req.query;
-    //const userRole = req.user.role;
-    const userRole = 'manager'
+    const userRole = req.user.role;
     //console.log("----------------------------------------- req query is: ", req.query)
 
 
@@ -1753,7 +1752,7 @@ app.post('/events', authenticateJWT, checkRole('manager'), async (req, res) => {
 });
 
 // Retrieve a list of events
-app.get('/events', /*authenticateJWT,*/ async (req, res) => {
+app.get('/events', authenticateJWT, async (req, res) => {
     try {
         const { name, location, started, ended, showFull, page = 1, limit = 10, published } = req.query;
         
@@ -1814,7 +1813,7 @@ app.get('/events', /*authenticateJWT,*/ async (req, res) => {
           // Now apply pagination after filtering
           const paginatedEvents = filteredEvents.slice(skip, skip + take);
 
-        req.user = { role: 'manager' }; ///**** CHANGED BY USMAN NEED to revert
+        //req.user = { role: 'manager' }; ///**** CHANGED BY USMAN NEED to revert
         // Role-specific filters
         if (req.user.role === 'regular' || req.user.role === 'cashier') {
             where.published = true; // Regular users can only see published events
