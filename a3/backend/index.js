@@ -1042,8 +1042,8 @@ app.post(
   );
 
 
-// Retrieve a list of transactions
-app.get('/transactions', /*authenticateJWT, checkRole('manager'),*/ async (req, res) => {
+// Retrieve a list of transactions with filtering and pagination
+app.get('/transactions', authenticateJWT, checkRole('manager'), async (req, res) => {
     const {
         name,
         createdBy,
@@ -1055,19 +1055,34 @@ app.get('/transactions', /*authenticateJWT, checkRole('manager'),*/ async (req, 
         operator,
         page = 1,
         limit = 10,
+        sortBy = 'createdAt',
+        sortOrder = 'desc'
     } = req.query;
 
-    // Validate relatedId and type
-    if (relatedId && !type) {
-        return res.status(400).json({ error: "relatedId must be used with type" });
-    }
+    // Validate inputs
+    try {
+        // Validate pagination parameters
+        const pageNum = parseInt(page);
+        const limitNum = parseInt(limit);
+        if (isNaN(pageNum)) throw new Error("Page must be a number");
+        if (isNaN(limitNum)) throw new Error("Limit must be a number");
+        if (pageNum < 1) throw new Error("Page must be at least 1");
+        if (limitNum < 1 || limitNum > 100) throw new Error("Limit must be between 1 and 100");
 
-    // Validate amount and operator
-    if (amount && !operator) {
-        return res.status(400).json({ error: "amount must be used with operator" });
-    }
-    if (operator && !['gte', 'lte'].includes(operator)) {
-        return res.status(400).json({ error: "operator must be 'gte' or 'lte'" });
+        // Validate relatedId and type
+        if (relatedId && !type) {
+            throw new Error("relatedId must be used with type");
+        }
+
+        // Validate amount and operator
+        if (amount && !operator) {
+            throw new Error("amount must be used with operator");
+        }
+        if (operator && !['gte', 'lte', 'gt', 'lt', 'equals'].includes(operator)) {
+            throw new Error("operator must be one of: gte, lte, gt, lt, equals");
+        }
+    } catch (error) {
+        return res.status(400).json({ error: error.message });
     }
 
     try {
@@ -1077,14 +1092,14 @@ app.get('/transactions', /*authenticateJWT, checkRole('manager'),*/ async (req, 
         // Filter by name (utorid or user name)
         if (name) {
             filter.OR = [
-                { user: { utorid: { contains: name} } },
-                { user: { name: { contains: name} } },
+                { user: { utorid: { contains: name, mode: 'insensitive' } } },
+                { user: { name: { contains: name, mode: 'insensitive' } } },
             ];
         }
 
         // Filter by createdBy
         if (createdBy) {
-            filter.createdBy = createdBy;
+            filter.createdBy = { contains: createdBy, mode: 'insensitive' };
         }
 
         // Filter by suspicious
@@ -1094,7 +1109,7 @@ app.get('/transactions', /*authenticateJWT, checkRole('manager'),*/ async (req, 
 
         // Filter by promotionId
         if (promotionId) {
-            filter.promotions = { some: { id: parseInt(promotionId) } };
+            filter.promotionId = parseInt(promotionId);
         }
 
         // Filter by type
@@ -1112,48 +1127,76 @@ app.get('/transactions', /*authenticateJWT, checkRole('manager'),*/ async (req, 
             filter.amount = { [operator]: parseInt(amount) };
         }
 
-        // Fetch the total count of transactions matching the filters
-        const count = await prisma.transaction.count({ where: filter });
-
-        // Fetch the paginated list of transactions
-        const transactions = await prisma.transaction.findMany({
-            where: filter,
-            include: {
-                user: {
-                    select: {
-                        utorid: true,
-                        name: true,
+        // Fetch both count and transactions in parallel for better performance
+        const [count, transactions] = await Promise.all([
+            prisma.transaction.count({ where: filter }),
+            prisma.transaction.findMany({
+                where: filter,
+                include: {
+                    user: {
+                        select: {
+                            utorid: true,
+                            name: true,
+                            email: true,
+                        },
+                    },
+                    promotion: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                    event: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
                     },
                 },
-                promotion: {
-                    select: {
-                        id: true,
-                    },
+                orderBy: {
+                    [sortBy]: sortOrder,
                 },
-            },
-            skip: (page - 1) * limit, // Pagination offset
-            take: parseInt(limit), // Number of results per page
-        });
+                skip: (page - 1) * limit,
+                take: parseInt(limit),
+            }),
+        ]);
 
         // Format the response
         const results = transactions.map(transaction => ({
             id: transaction.id,
-            utorid: transaction.user.utorid,
+            user: {
+                utorid: transaction.user.utorid,
+                name: transaction.user.name,
+                email: transaction.user.email,
+            },
             amount: transaction.amount,
             type: transaction.type,
             spent: transaction.spent,
-            promotionIds: transaction.promotionId.map(promo => promo.id),
+            promotion: transaction.promotion,
+            event: transaction.event,
             suspicious: transaction.suspicious,
             remark: transaction.remark,
             createdBy: transaction.createdBy,
             relatedId: transaction.relatedId,
+            createdAt: transaction.createdAt,
         }));
 
-        // Respond with count and results
-        res.status(200).json({ count, results });
+        // Respond with pagination metadata and results
+        res.status(200).json({
+            metadata: {
+                total: count,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalPages: Math.ceil(count / limit),
+            },
+            results,
+        });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Internal server error" });
+        console.error('Error fetching transactions:', error);
+        res.status(500).json({ 
+            error: "Internal server error",
+            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 });
 
