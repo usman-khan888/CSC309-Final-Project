@@ -25,21 +25,23 @@ const Layout = () => {
         setTransferError("");
         setTransferSuccess("");
 
-        if (!user?.token) {
+        const token = localStorage.getItem('token');
+        if (!token) {
             setTransferError("No authentication token found. Please log in again.");
             return;
         }
 
         try {
-            const response = await transferPoints(user.token, recipientUtorid, amount, remark);
+            const response = await transferPoints(token, recipientUtorid, amount, remark);
             setTransferSuccess(`Successfully transferred ${amount} points to ${recipientUtorid}`);
             setRecipientUtorid("");
             setAmount("");
             setRemark("");
             setShowTransferForm(false);
         } catch (error) {
-            if (error.message.includes('expired')) {
+            if (error.message.includes('expired') || error.message.includes('Invalid')) {
                 setTransferError(`${error.message} Please log in again.`);
+                logout(); // Force logout if token is invalid
             } else {
                 setTransferError(error.message);
             }
