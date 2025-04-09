@@ -29,6 +29,8 @@ const MyRoutes = () => {
             <Route path="/users" element={<Users />} />
             <Route path="/promotions" element={<Promotions />} />
             <Route path="/transactions" element={<Transactions />} />
+            <Route path="/users/me/transactions" element={<Transactions />} />
+            
         </Route>
     </Routes>;
 }
