@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "createsuperuser": "node prisma/createsu.js",
-    "start": "node index.js",
+    "start": "npx prisma migrate dev --name init && npx prisma migrate deploy && npx prisma generate && node index.js",
     "clean": "rm -rf prisma/dev.db* node_modules package-lock.json prisma/migrations/"
   },
   "author": "CSC309 Student, Winter 2025",
@@ -26,3 +26,4 @@
     "zod": "^3.24.2"
   }
 }
+
