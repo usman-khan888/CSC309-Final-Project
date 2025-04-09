@@ -42,7 +42,22 @@ const roleHierarchy = {
     'superuser': 3,
 };
 // -----------------------------------------------------------------------
-const port = process.env.PORT || 3000; // Eric
+const port = (() => {
+    const args = process.argv;
+
+    if (args.length !== 3) {
+        console.error("usage: node index.js port");
+        process.exit(1);
+    }
+
+    const num = parseInt(args[2], 10);
+    if (isNaN(num)) {
+        console.error("error: argument must be an integer.");
+        process.exit(1);
+    }
+
+    return num;
+})();
 
 const express = require("express");
 const app = express();
@@ -2306,7 +2321,7 @@ app.post('/events/:eventId/organizers', authenticateJWT, checkRole('manager'), a
     }
 });
 
-// Delete an event organizer from an event
+// Delete an event organizer from an
 app.delete('/events/:eventId/organizers/:userId', authenticateJWT, checkRole('manager'), async (req, res) => {
     try {
         const { eventId, userId } = req.params;
