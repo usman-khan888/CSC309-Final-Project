@@ -1326,6 +1326,28 @@ app.patch('/transactions/:transactionId/suspicious', authenticateJWT, checkRole(
 });
 
 
+// Add this before your transfer endpoint
+app.get('/users/utorid/:utorid', authenticateJWT, async (req, res) => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { utorid: req.params.utorid },
+        select: {
+          id: true,
+          utorid: true
+        }
+      });
+  
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+  
+      res.json(user);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
 // Create a new transfer transaction between the current logged-in user (sender) and the user specified by userId (the recipient)
 app.post('/users/:userId/transactions', authenticateJWT, async (req, res) => {
     console.log("/users/:userId/transactions is being called!")

@@ -46,9 +46,34 @@ export const fetchTransactions = async (token, {
   }
 };
 
-export const transferPoints = async (token, recipientId, amount, remark = '') => {
+// In services/TransactionsService.jsx
+export const getUserByUtorid = async (token, utorid) => {
   try {
-    const response = await fetch(`${VITE_BACKEND_URL}/users/${recipientId}/transactions`, {
+    const response = await fetch(`${VITE_BACKEND_URL}/users/utorid/${utorid}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to fetch user');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('UserService error:', error);
+    throw error;
+  }
+};
+
+export const transferPoints = async (token, recipientUtorid, amount, remark = '') => {
+  try {
+    // First get the recipient's user ID
+    const recipient = await getUserByUtorid(token, recipientUtorid);
+    
+    // Then make the transfer
+    const response = await fetch(`${VITE_BACKEND_URL}/users/${recipient.id}/transactions`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -62,6 +87,10 @@ export const transferPoints = async (token, recipientId, amount, remark = '') =>
     });
 
     if (!response.ok) {
+      if (response.status === 403) {
+        localStorage.removeItem('token');
+        throw new Error('Session expired. Please log in again.');
+      }
       const error = await response.json();
       throw new Error(error.error || 'Failed to transfer points');
     }

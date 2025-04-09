@@ -24,24 +24,32 @@ const Layout = () => {
         e.preventDefault();
         setTransferError("");
         setTransferSuccess("");
-
+    
         const token = localStorage.getItem('token');
         if (!token) {
             setTransferError("No authentication token found. Please log in again.");
             return;
         }
-
+    
         try {
-            const response = await transferPoints(token, recipientUtorid, amount, remark);
-            setTransferSuccess(`Successfully transferred ${amount} points to ${recipientUtorid}`);
+            // First validate the amount
+            const amountNum = parseInt(amount);
+            if (isNaN(amountNum) || amountNum <= 0) {
+                throw new Error("Amount must be a positive number");
+            }
+    
+            const response = await transferPoints(token, recipientUtorid, amountNum, remark);
+            setTransferSuccess(`Successfully transferred ${amountNum} points to ${recipientUtorid}`);
             setRecipientUtorid("");
             setAmount("");
             setRemark("");
             setShowTransferForm(false);
         } catch (error) {
-            if (error.message.includes('expired') || error.message.includes('Invalid')) {
+            if (error.message.includes('not found')) {
+                setTransferError(`Recipient ${recipientUtorid} not found`);
+            } else if (error.message.includes('expired') || error.message.includes('Invalid')) {
                 setTransferError(`${error.message} Please log in again.`);
-                logout(); // Force logout if token is invalid
+                logout();
             } else {
                 setTransferError(error.message);
             }
