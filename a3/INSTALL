@@ -4,3 +4,50 @@
 
 # 1. All the packages you need to install
 # 2. How to configure various servers (e.g., Nginx, Apache, etc)
+
+
+
+React Router DOM
+React Training. (n.d.). react-router-dom [JavaScript library]. npm. https://www.npmjs.com/package/react-router-dom
+Used to handle routing in React applications—enables navigation between pages without refreshing the browser.
+
+React
+Meta Platforms, Inc. (n.d.). react [JavaScript library]. npm. https://www.npmjs.com/package/react
+The core library for building user interfaces with a component-based architecture. Powers most modern single-page applications (SPAs).
+
+Prisma Client
+Prisma. (n.d.). @prisma/client [JavaScript library]. npm. https://www.npmjs.com/package/@prisma/client
+An auto-generated, type-safe query builder for interacting with your database. Part of the Prisma ORM ecosystem.
+
+Faker (faker-js)
+faker-js. (n.d.). @faker-js/faker [JavaScript library]. npm. https://www.npmjs.com/package/@faker-js/faker
+Used to generate fake data—emails, usernames, names, dates—for testing, development, or seeding databases.
+
+bcryptjs
+Holowaychuk, T., & Collaborators. (n.d.). bcryptjs [JavaScript library]. npm. https://www.npmjs.com/package/bcryptjs
+A JavaScript implementation of the bcrypt hashing algorithm. Used to securely hash and compare passwords on the backend.
+
+Express
+StrongLoop. (n.d.). express [Node.js framework]. npm. https://www.npmjs.com/package/express
+A fast and minimalist web framework for Node.js. It simplifies routing, middleware integration, and handling HTTP requests and responses.
+
+jsonwebtoken
+Auth0. (n.d.). jsonwebtoken [Node.js library]. npm. https://www.npmjs.com/package/jsonwebtoken
+A library for signing and verifying JSON Web Tokens (JWTs). Used for authentication and authorization by creating secure tokens for user sessions.
+
+UUID
+Claudiu, D. (n.d.). uuid [JavaScript library]. npm. https://www.npmjs.com/package/uuid
+A simple, fast implementation to generate universally unique identifiers (UUIDs). Commonly used for generating unique IDs for objects in distributed systems.
+
+Multer
+Sundaram, A. (n.d.). multer [Node.js middleware]. npm. https://www.npmjs.com/package/multer
+A middleware for handling file uploads in Node.js. It simplifies the process of accepting multipart/form-data used for uploading files.
+
+Path
+Node.js Contributors. (n.d.). path [Node.js module]. npm. https://www.npmjs.com/package/path
+A built-in module for handling and transforming file and directory paths in a way that works across all operating systems.
+
+CORS
+Troy Goode. (n.d.). cors [Node.js middleware]. npm. https://www.npmjs.com/package/cors
+A middleware used to enable Cross-Origin Resource Sharing (CORS) in a Node.js application, allowing servers to specify which domains are allowed to access resources.
+
