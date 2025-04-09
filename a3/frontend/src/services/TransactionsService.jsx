@@ -136,7 +136,7 @@ export const fetchUserTransactions = async (token, {
 
     if (!response.ok) {
       const error = await response.json();
-      throw new Error(error.message || 'Failed to fetch user transactions');
+      throw new Error(error.message || 'Users do not access to transactions currently');
     }
 
     return await response.json();
