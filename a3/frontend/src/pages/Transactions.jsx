@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { fetchTransactions } from '../services/TransactionsService';
+import { fetchTransactions, fetchUserTransactions } from '../services/TransactionsService';
 import Layout from '../components/Layout';
 
 const Transactions = () => {
@@ -28,9 +28,14 @@ const Transactions = () => {
         const token = localStorage.getItem('token');
         if (!token) throw new Error('Authentication required');
 
-
+        // Check user role to determine which endpoint to use
+        let data;
+        if (user.role === 'manager' || user.role === 'superuser') {
+          data = await fetchTransactions(token, filters);
+        } else {
+          data = await fetchUserTransactions(token, filters);
+        }
         
-        const data = await fetchTransactions(token, filters);
         setTransactionsData(data);
       } catch (err) {
         setError(err.message);
@@ -40,18 +45,20 @@ const Transactions = () => {
     };
 
     loadTransactions();
-  }, [filters]);
+  }, [filters, user?.role]); // Add user.role to dependency array
 
   const handleFilterChange = (newFilters) => {
-    setFilters(prev => ({ ...prev, ...newFilters, page: 1 })); // Reset to page 1 when filters change
+    setFilters(prev => ({ ...prev, ...newFilters, page: 1 }));
   };
 
-  //if (loading) return <div>Loading transactions...</div>;
   if (error) return <div className="text-red-500">Error: {error}</div>;
 
   return (
       <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-6">Transactions ({transactionsData.count})</h1>
+        <h1 className="text-3xl font-bold mb-6">
+          Transactions ({transactionsData.count})
+          {(user.role === 'cashier' || user.role === 'regular') && ' (Your Transactions)'}
+        </h1>
         
         {/* Filter Controls */}
         <div className="bg-white p-4 rounded-lg shadow mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -140,7 +147,7 @@ const Transactions = () => {
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {transactionsData.results.map(transaction => (
                 <div key={transaction.id} className="border rounded-lg p-4 shadow hover:shadow-md transition-shadow">
-                  <h2 className="text-xl font-semibold mb-2">{transaction.name}</h2>
+                  <h2 className="text-xl font-semibold mb-2">{transaction.user.name}</h2>
                   <div className="text-sm text-gray-500 space-y-1">
                     <p>Created By: {transaction.createdBy}</p>
                     <p>Suspicious: {transaction.suspicious}</p>
