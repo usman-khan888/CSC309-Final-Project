@@ -97,6 +97,128 @@ footer {
     display: inline-block;
 }
 
+/* Updated Transfer Points Button */
+.transfer-btn {
+    background-color: #9c27b0; /* Purple background */
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px; /* More rounded corners */
+    margin-right: 20px; /* Increased spacing */
+    margin-left: 10px; /* Added left spacing */
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    outline: 2px solid transparent; /* Clear outline */
+    transition: all 0.3s ease; /* Smooth hover transition */
+}
+
+
+.transfer-btn:hover {
+    background-color: #7b1fa2; /* Darker purple */
+    outline: 2px solid #e1bee7; /* Light purple outline on hover */
+    transform: scale(1.05); /* Slight grow effect */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+}
+
+/* Transfer Form */
+.transfer-form-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.transfer-form {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.transfer-form h3 {
+    margin-top: 0;
+    color: #4a4e69;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.submit-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.submit-btn:hover {
+    background-color: #45a049;
+}
+
+.cancel-btn {
+    background-color: #f44336;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.cancel-btn:hover {
+    background-color: #d32f2f;
+}
+
+.transfer-error {
+    color: #f44336;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #ffebee;
+    border-radius: 4px;
+}
+
+.transfer-success {
+    color: #4CAF50;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #e8f5e9;
+    border-radius: 4px;
+}
+
+.transfer-btn:focus {
+    outline: 2px solid #e1bee7; /* Keep outline when focused */
+}
+
 @media (max-width: 400px) {
     main {
         padding: 20px 10px;

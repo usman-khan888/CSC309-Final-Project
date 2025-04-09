@@ -860,10 +860,7 @@ app.post('/auth/resets/:resetToken', async (req, res) => {
 
 
 // Create a new purchase transaction.
-app.post(
-    '/transactions',
-    authenticateJWT,
-    async (req, res) => {
+app.post('/transactions', authenticateJWT, async (req, res) => {
       const { utorid, type, spent, amount, relatedId, promotionIds, remark } = req.body;
       const createdBy = req.user.utorid; // The user creating the transaction
   
@@ -1331,6 +1328,7 @@ app.patch('/transactions/:transactionId/suspicious', authenticateJWT, checkRole(
 
 // Create a new transfer transaction between the current logged-in user (sender) and the user specified by userId (the recipient)
 app.post('/users/:userId/transactions', authenticateJWT, async (req, res) => {
+    console.log("/users/:userId/transactions is being called!")
     const { userId: recipientId } = req.params;
     const { type, amount, remark } = req.body;
     const senderId = req.user.id; // ID of the logged-in user (sender)
@@ -1365,11 +1363,13 @@ app.post('/users/:userId/transactions', authenticateJWT, async (req, res) => {
 
         // Check if the sender is verified
         if (!sender.verified) {
+            console.log("Sender is not verified")
             return res.status(403).json({ error: "Sender is not verified" });
         }
 
         // Check if the sender has enough points
         if (sender.points < amount) {
+            console.log("Sender does not have enough points")
             return res.status(400).json({ error: "Sender does not have enough points" });
         }
 
@@ -1385,6 +1385,7 @@ app.post('/users/:userId/transactions', authenticateJWT, async (req, res) => {
 
         // Check if the recipient exists
         if (!recipient) {
+            console.log("Recipient not found")
             return res.status(404).json({ error: "Recipient not found" });
         }
 
@@ -1714,6 +1715,11 @@ app.post('/events', authenticateJWT, checkRole('manager'), async (req, res) => {
     // Validate startTime and endTime
     const start = new Date(startTime);
     const end = new Date(endTime);
+    const now = new Date()
+    //console.log("start time of event: ", start.getTime, " end time of event ", now.getTime)
+    if (start.getTime() < now.getTime()){
+        return res.status(400).json({ error: "Events cannot start in the past!" });
+    }
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
         return res.status(400).json({ error: "Invalid date format for startTime or endTime" });
@@ -2203,6 +2209,132 @@ app.delete('/events/:eventId', authenticateJWT, checkRole('manager'), async (req
         });
     }
 });
+// Add a guest to this event.
+app.post('/events/:eventId/guests', authenticateJWT, async (req, res) => {
+    try {
+        const { eventId } = req.params;
+        const { utorid } = req.body;
+        if (!eventId || eventId === 'None' || isNaN(parseInt(eventId, 10))) {
+            return res.status(400).json({ error: "Invalid or missing event ID" });
+        }
+        // Validate payload
+        if (!utorid) {
+            return res.status(400).json({ error: "Missing required field: utorid" });
+        }
+
+        // Find the event
+        const event = await prisma.event.findUnique({
+            where: { id: parseInt(eventId) },
+            include: {
+                organizers: {
+                    select: {
+                        id: true,
+                        utorid: true,
+                    },
+                },
+                guests: {
+                    select: {
+                        id: true,
+                        utorid: true,
+                    },
+                },
+                eventAttendances: true, // Include attendees to calculate numGuests
+            },
+        });
+
+        // Check if the event exists
+        if (!event) {
+            return res.status(404).json({ error: "Event not found" });
+        }
+
+        // Check if the user is authorized (manager, superuser, or organizer)
+        const isAuthorized =
+            req.user.role === 'manager' ||
+            req.user.role === 'superuser' ||
+            event.organizers.some(organizer => organizer.utorid === req.user.utorid);
+
+        if (!isAuthorized) {
+            return res.status(403).json({ error: "Forbidden: You do not have permission to add guests to this event" });
+        }
+
+        // Check if the event is visible to the organizer
+        if (req.user.role !== 'manager' && req.user.role !== 'superuser' && !event.published) {
+            return res.status(404).json({ error: "Event is not visible" });
+        }
+
+        // Check if the event has ended
+        if (event.endTime <= new Date()) {
+            return res.status(410).json({ error: "Event has ended" });
+        }
+
+        // Check if the event is full
+        if (event.capacity && event.eventAttendances.length >= event.capacity) {
+            return res.status(410).json({ error: "Event is full" });
+        }
+
+        // Find the user to be added as a guest
+        const user = await prisma.user.findUnique({
+            where: { utorid },
+            select: {
+                id: true,
+                utorid: true,
+                name: true,
+            },
+        });
+
+        // Check if the user exists
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        // Check if the user is already an organizer
+        const isOrganizer = event.organizers.some(organizer => organizer.utorid === utorid);
+        console.log('Current user:', req.user);
+        console.log('Event organizers:', event.organizers.map(o => ({ id: o.id, utorid: o.utorid })));
+        if (isOrganizer) {
+            return res.status(400).json({ error: "User is registered as an organizer. Remove them as an organizer first." });
+        }
+
+        // Check if the user is already a guest
+        const isGuest = event.guests.some(guest => guest.utorid === utorid);
+        if (isGuest) {
+            return res.status(400).json({ error: "User is already a guest" });
+        }
+
+        // Add the user as a guest
+        await prisma.event.update({
+            where: { id: parseInt(eventId) },
+            data: {
+                guests: {
+                    connect: { id: user.id },
+                },
+            },
+        });
+
+        // Fetch the updated event with guests
+        const updatedEvent = await prisma.event.findUnique({
+            where: { id: parseInt(eventId) },
+            include: {
+                eventAttendances: true, // Include attendees to calculate numGuests
+            },
+        });
+
+        // Return the response
+        res.status(201).json({
+            id: updatedEvent.id,
+            name: updatedEvent.name,
+            location: updatedEvent.location,
+            guestAdded: user,
+            numGuests: updatedEvent.eventAttendances.length,
+        });
+
+    } catch (error) {
+        console.error("Error adding guest:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// Add organizer to event
 app.post('/events/:eventId/organizers', authenticateJWT, checkRole('manager'), async (req, res) => {
     try {
         const { eventId } = req.params;
@@ -2291,7 +2423,8 @@ app.post('/events/:eventId/organizers', authenticateJWT, checkRole('manager'), a
                 },
             },
         });
-
+        
+        console.log("ALL ORGANIZERS OF EVENT ", updatedEvent.name  ," are: ", updatedEvent.organizers)
         // Return the updated event
         res.status(201).json({
             id: updatedEvent.id,
@@ -2310,7 +2443,7 @@ app.post('/events/:eventId/organizers', authenticateJWT, checkRole('manager'), a
 app.delete('/events/:eventId/organizers/:userId', authenticateJWT, checkRole('manager'), async (req, res) => {
     try {
         const { eventId, userId } = req.params;
-        console.log("-------------------------------------------------get /events/:eventId/organizers/:userId", eventId, "req.params: ", req.params)
+        console.log("DELETE ORGANIZER FROM EVENT -------------------------------------------------get /events/:eventId/organizers/:userId", eventId, "req.params: ", req.params)
         if (!eventId || eventId === 'None' || isNaN(parseInt(eventId, 10))) {
             return res.status(400).json({ error: "Invalid or missing event ID" });
         }
@@ -2358,128 +2491,7 @@ app.delete('/events/:eventId/organizers/:userId', authenticateJWT, checkRole('ma
 
 
 
-// Add a guest to this event.
-app.post('/events/:eventId/guests', authenticateJWT, async (req, res) => {
-    try {
-        const { eventId } = req.params;
-        const { utorid } = req.body;
-        if (!eventId || eventId === 'None' || isNaN(parseInt(eventId, 10))) {
-            return res.status(400).json({ error: "Invalid or missing event ID" });
-        }
-        // Validate payload
-        if (!utorid) {
-            return res.status(400).json({ error: "Missing required field: utorid" });
-        }
 
-        // Find the event
-        const event = await prisma.event.findUnique({
-            where: { id: parseInt(eventId) },
-            include: {
-                organizers: {
-                    select: {
-                        id: true,
-                        utorid: true,
-                    },
-                },
-                guests: {
-                    select: {
-                        id: true,
-                        utorid: true,
-                    },
-                },
-                eventAttendances: true, // Include attendees to calculate numGuests
-            },
-        });
-
-        // Check if the event exists
-        if (!event) {
-            return res.status(404).json({ error: "Event not found" });
-        }
-
-        // Check if the user is authorized (manager, superuser, or organizer)
-        const isAuthorized =
-            req.user.role === 'manager' ||
-            req.user.role === 'superuser' ||
-            event.organizers.some(organizer => organizer.utorid === req.user.utorid);
-
-        if (!isAuthorized) {
-            return res.status(403).json({ error: "Forbidden: You do not have permission to add guests to this event" });
-        }
-
-        // Check if the event is visible to the organizer
-        if (req.user.role !== 'manager' && req.user.role !== 'superuser' && !event.published) {
-            return res.status(404).json({ error: "Event is not visible" });
-        }
-
-        // Check if the event has ended
-        if (event.endTime <= new Date()) {
-            return res.status(410).json({ error: "Event has ended" });
-        }
-
-        // Check if the event is full
-        if (event.capacity && event.eventAttendances.length >= event.capacity) {
-            return res.status(410).json({ error: "Event is full" });
-        }
-
-        // Find the user to be added as a guest
-        const user = await prisma.user.findUnique({
-            where: { utorid },
-            select: {
-                id: true,
-                utorid: true,
-                name: true,
-            },
-        });
-
-        // Check if the user exists
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-
-        // Check if the user is already an organizer
-        const isOrganizer = event.organizers.some(organizer => organizer.utorid === utorid);
-        if (isOrganizer) {
-            return res.status(400).json({ error: "User is registered as an organizer. Remove them as an organizer first." });
-        }
-
-        // Check if the user is already a guest
-        const isGuest = event.guests.some(guest => guest.utorid === utorid);
-        if (isGuest) {
-            return res.status(400).json({ error: "User is already a guest" });
-        }
-
-        // Add the user as a guest
-        await prisma.event.update({
-            where: { id: parseInt(eventId) },
-            data: {
-                guests: {
-                    connect: { id: user.id },
-                },
-            },
-        });
-
-        // Fetch the updated event with guests
-        const updatedEvent = await prisma.event.findUnique({
-            where: { id: parseInt(eventId) },
-            include: {
-                eventAttendances: true, // Include attendees to calculate numGuests
-            },
-        });
-
-        // Return the response
-        res.status(201).json({
-            id: updatedEvent.id,
-            name: updatedEvent.name,
-            location: updatedEvent.location,
-            guestAdded: user,
-            numGuests: updatedEvent.eventAttendances.length,
-        });
-
-    } catch (error) {
-        console.error("Error adding guest:", error);
-        res.status(500).json({ error: "Internal server error" });
-    }
-});
 
 
 //Remove a guest from this event.
@@ -2677,6 +2689,7 @@ app.delete('/events/:eventId/guests/me', authenticateJWT, async (req, res) => {
 
 // create a new reward transaction
 app.post('/events/:eventId/transactions', authenticateJWT, async (req, res) => {
+    console.log("got to /events/:eventId/transactions")
     try {
         const { eventId } = req.params;
         const { type, utorid, amount, remark } = req.body;
@@ -2742,6 +2755,7 @@ app.post('/events/:eventId/transactions', authenticateJWT, async (req, res) => {
                 return res.status(404).json({ error: "User not found" });
             }
 
+
             // Create the transaction
             const transaction = await prisma.transaction.create({
                 data: {
@@ -2784,6 +2798,14 @@ app.post('/events/:eventId/transactions', authenticateJWT, async (req, res) => {
         }
 
         // If utorid is not specified, award points to all guests
+        console.log("Current time: ", new Date(), " event.endtime: ", event.endTime)
+        if (event.endTime > new Date()) {
+            return res.status(400).json({ 
+                error: "Points can only be awarded after the event has ended",
+                eventEndTime: event.endTime,
+                currentTime: new Date()
+            });
+        }
         const transactions = [];
         for (const guest of event.guests) {
             // Create a transaction for each guest

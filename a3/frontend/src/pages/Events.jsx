@@ -144,8 +144,13 @@ const Events = () => {
 
   const isManager = user?.role === 'manager' || user?.role === 'superuser';
   const isOrganizer = (event) => {
-    if (!event.organizers) return false;
-    return event.organizers.some(org => org.utorid === user?.utorid);
+    if (!user?.utorid) return false;
+    if (!event.organizers || !Array.isArray(event.organizers)) return false;
+    
+    return event.organizers.some(org => {
+      if (!org || !org.utorid) return false;
+      return org.utorid.toLowerCase() === user.utorid.toLowerCase();
+    });
   };
 
   const isGuest = (event) => {
@@ -218,8 +223,7 @@ const Events = () => {
                   <p>Points: {event.points} ({event.pointsRemain} remaining)</p>
                   <p>Status: {event.published ? 'Published' : 'Draft'}</p>
                 </div>
-                
-                {(user?.role === 'regular' || true)&& (
+                {(!isOrganizer(event))&& (
                   <div className="mt-4">
                     {isGuest(event) ? (
                       <button

@@ -46,6 +46,33 @@ export const fetchTransactions = async (token, {
   }
 };
 
+export const transferPoints = async (token, recipientId, amount, remark = '') => {
+  try {
+    const response = await fetch(`${VITE_BACKEND_URL}/users/${recipientId}/transactions`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        type: 'transfer',
+        amount: parseInt(amount),
+        remark
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to transfer points');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('TransferPointsService error:', error);
+    throw error;
+  }
+};
+
 // For cashiers/regular users - only their transactions
 export const fetchUserTransactions = async (token, { 
   name = '',
