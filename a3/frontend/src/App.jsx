@@ -12,6 +12,7 @@ import Events from "./pages/Events"
 import Users from "./pages/Users"
 import EditProfile from "./pages/EditProfile";
 import Promotions from "./pages/Promotions";
+import Transactions from "./pages/Transactions";
 
 const MyRoutes = () => {
     return <Routes>
@@ -27,6 +28,7 @@ const MyRoutes = () => {
             <Route path="/events" element={<Events />} />
             <Route path="/users" element={<Users />} />
             <Route path="/promotions" element={<Promotions />} />
+            <Route path="/transactions" element={<Transactions />} />
         </Route>
     </Routes>;
 }

@@ -17,6 +17,7 @@ function Profile() {
             <Link to="/events">View Events</Link>
             <Link to="/users">View Users</Link>
             <Link to="/promotions">View Promotions</Link>
+            <Link to="/transactions">View Transactions</Link>
             <a href="#" onClick={logout}>Logout</a>
         </div>
     </>;
