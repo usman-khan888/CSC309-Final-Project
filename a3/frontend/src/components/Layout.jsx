@@ -6,7 +6,7 @@ import { useEffect } from "react";
 
 const Layout = () => {
     const { user, logout } = useAuth();
-
+    
     useEffect(() => {
         if (user && user.role === undefined) {
             logout();
@@ -18,7 +18,7 @@ const Layout = () => {
             <Link to="/">Home</Link>
             { user && user.role !== undefined ? (
                 <>
-                    {(user.role === 'cashier'  user.role === 'manager'  user.role === 'superuser') && (
+                    {(user.role === 'cashier' || user.role === 'manager' || user.role === 'superuser') && (
                         <Link to="/register" className="register-btn">Register New User</Link>
                     )}
                     {user.role === 'regular' && <PointsBadge />}
