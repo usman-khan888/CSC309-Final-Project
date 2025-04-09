@@ -42,7 +42,7 @@ const roleHierarchy = {
     'superuser': 3,
 };
 // -----------------------------------------------------------------------
-const PORT = process.env.PORT || 3000; // Use Railway's PORT or default to 3000
+const port = process.env.PORT || 3000; // Use Railway's PORT or default to 3000
 
 const express = require("express");
 const app = express();
