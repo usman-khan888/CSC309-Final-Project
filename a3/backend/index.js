@@ -2321,7 +2321,7 @@ app.post('/events/:eventId/organizers', authenticateJWT, checkRole('manager'), a
     }
 });
 
-// Delete an event organizer from an event
+// Delete an event organizer from an
 app.delete('/events/:eventId/organizers/:userId', authenticateJWT, checkRole('manager'), async (req, res) => {
     try {
         const { eventId, userId } = req.params;
