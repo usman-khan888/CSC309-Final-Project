@@ -1612,7 +1612,7 @@ app.get('/users/me/transactions', authenticateJWT, async (req, res) => {
             type: transaction.type,
             spent: transaction.spent,
             amount: transaction.amount,
-            promotionIds: transaction.promotionId.map(promo => promo.id),
+            promotionIds: transaction.promotionId.map(promo => promo.id) || null,
             remark: transaction.remark,
             createdBy: transaction.createdBy,
             relatedId: transaction.relatedId,
