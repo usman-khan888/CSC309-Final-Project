@@ -1,9 +1,13 @@
 import { useAuth } from "../contexts/AuthContext";
 
-const PointsBadge = () => {
+const PointsBadge = ({ roleView }) => {
     const { user } = useAuth();
-    
-    if (!user || user.role !== 'regular') {
+
+    const canViewPoints = user &&
+        ['cashier', 'manager', 'superuser'].includes(user.role) &&
+        roleView === 'regular';
+
+    if (!canViewPoints) {
         return null;
     }
 

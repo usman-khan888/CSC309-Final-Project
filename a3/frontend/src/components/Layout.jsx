@@ -5,6 +5,8 @@ import PointsBadge from "../pages/PointsBadge";
 import { useEffect, useState } from "react";
 import { transferPoints } from "../services/TransactionsService";
 
+const roleHierarchy = ["regular", "cashier", "manager", "superuser"];
+
 const Layout = () => {
     const { user, logout } = useAuth();
     const [showTransferForm, setShowTransferForm] = useState(false);
@@ -13,31 +15,33 @@ const Layout = () => {
     const [remark, setRemark] = useState("");
     const [transferError, setTransferError] = useState("");
     const [transferSuccess, setTransferSuccess] = useState("");
-    
+
+    const [roleView, setRoleView] = useState(null); // NEW
+
     useEffect(() => {
         if (user && user.role === undefined) {
             logout();
         }
+        setRoleView(user?.role); // Set default view to actual role
     }, [user, logout]);
 
     const handleTransfer = async (e) => {
         e.preventDefault();
         setTransferError("");
         setTransferSuccess("");
-    
+
         const token = localStorage.getItem('token');
         if (!token) {
             setTransferError("No authentication token found. Please log in again.");
             return;
         }
-    
+
         try {
-            // First validate the amount
             const amountNum = parseInt(amount);
             if (isNaN(amountNum) || amountNum <= 0) {
                 throw new Error("Amount must be a positive number");
             }
-    
+
             const response = await transferPoints(token, recipientUtorid, amountNum, remark);
             setTransferSuccess(`Successfully transferred ${amountNum} points to ${recipientUtorid}`);
             setRecipientUtorid("");
@@ -56,17 +60,22 @@ const Layout = () => {
         }
     };
 
+    const getViewableRoles = (currentRole) => {
+        const currentIndex = roleHierarchy.indexOf(currentRole);
+        return roleHierarchy.slice(0, currentIndex + 1); // roles below or equal to current
+    };
+
     return <>
         <header>
             <Link to="/">Home</Link>
-            { user && user.role !== undefined ? (
+            {user && user.role !== undefined ? (
                 <>
                     {(user.role === 'cashier' || user.role === 'manager' || user.role === 'superuser') && (
                         <Link to="/register" className="register-btn">Register New User</Link>
                     )}
-                    {user.role === 'regular' && (
+                    {roleView === 'regular' && (
                         <>
-                            <PointsBadge />
+                            <PointsBadge roleView={roleView}/>
                             <button 
                                 onClick={() => setShowTransferForm(!showTransferForm)} 
                                 className="transfer-btn"
@@ -75,17 +84,32 @@ const Layout = () => {
                             </button>
                         </>
                     )}
-                    {user.role !== undefined && (
-                        <Link to="/edit-profile" className="edit-btn">Edit Profile</Link>
-                    )}
+                    <Link to="/edit-profile" className="edit-btn">Edit Profile</Link>
                     <Link to="/profile" className="user">{user.utorid}</Link>
+                    
+                    {/* --- ROLE DROPDOWN BUTTON (visible for cashier and up) --- */}
+                    {(user.role !== "regular") && (
+                        <div className="role-switcher">
+                            <label htmlFor="role-select">View As: </label>
+                            <select
+                                id="role-select"
+                                value={roleView}
+                                onChange={(e) => setRoleView(e.target.value)}
+                            >
+                                {getViewableRoles(user.role).map((r) => (
+                                    <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     <a href="#" onClick={logout}>Logout</a>
                 </>
             ) : (
                 <Link to="/login">Login</Link>
             )}
         </header>
-        
+
         {showTransferForm && (
             <div className="transfer-form-container">
                 <form onSubmit={handleTransfer} className="transfer-form">
@@ -142,6 +166,7 @@ const Layout = () => {
         )}
 
         <main>
+            {/* You can pass roleView instead of user.role to children via context if needed */}
             <Outlet />
         </main>
         <footer>
