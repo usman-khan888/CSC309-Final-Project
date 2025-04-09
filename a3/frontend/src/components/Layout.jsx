@@ -14,6 +14,7 @@ const Layout = () => {
                         <Link to="/register" className="register-btn">Register New User</Link>
                     )}
                     {user.role === 'regular' && <PointsBadge />}
+                    {console.log(user.role)}
                     <Link to="/edit-profile" className="edit-btn">Edit Profile</Link>
                     <Link to="/profile" className="user">{user.utorid}</Link>
                     <a href="#" onClick={logout}>Logout</a>
